@@ -101,9 +101,26 @@ Integrate FaceID/TouchID for seamless mobile login.
 
 ---
 
-## Screenshots
+## Live Demo
 
-Coming soon...
+### Option 1: Build with EAS
+
+```bash
+npm install -g eas-cli
+eas login
+eas build --profile preview --platform ios  # or android
+```
+
+See [Deployment Guide](./docs/deployment.md) for details.
+
+### Option 2: Run Locally
+
+```bash
+npm run ios   # iOS Simulator
+npm run android  # Android Emulator
+```
+
+**Note**: Biometric authentication requires real device.
 
 ---
 
