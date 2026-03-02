@@ -23,74 +23,84 @@ npm install @lazorkit/wallet-mobile-adapter @solana/web3.js
 创建 `src/providers/LazorkitProvider.tsx`：
 
 ```typescript
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { LazorKitMobileAdapter } from '@lazorkit/wallet-mobile-adapter';
-import { Connection, clusterApiUrl } from '@solana/web3.js';
+import React, { createContext, useContext, ReactNode } from 'react';
+import {
+  LazorKitProvider as LazorKitProviderSDK,
+  useWallet as useLazorWallet,
+} from '@lazorkit/wallet-mobile-adapter';
 
 interface LazorkitContextType {
-  adapter: LazorKitMobileAdapter | null;
   publicKey: string | null;
   isConnected: boolean;
+  isLoading: boolean;
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
+  signMessage: (message: string) => Promise<string>;
+  signAndSendTransaction: (instructions: any[]) => Promise<string>;
 }
 
 const LazorkitContext = createContext<LazorkitContextType>({} as any);
 
-export const LazorkitProvider: React.FC = ({ children }) => {
-  const [adapter, setAdapter] = useState<LazorKitMobileAdapter | null>(null);
-  const [publicKey, setPublicKey] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+const WalletContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const {
+    connect,
+    disconnect,
+    signMessage,
+    signAndSendTransaction,
+    isConnected,
+    isLoading,
+    smartWalletPubkey,
+  } = useLazorWallet();
 
-  useEffect(() => {
-    // Initialize adapter
-    const connection = new Connection(clusterApiUrl('devnet'));
-    const lazorAdapter = new LazorKitMobileAdapter({
-      connection,
-      rpId: 'your-rp-id', // Your relying party ID
-    });
-    setAdapter(lazorAdapter);
-
-    // Listen for connection changes
-    lazorAdapter.on('connect', () => {
-      setPublicKey(lazorAdapter.publicKey?.toBase58() || null);
-      setIsConnected(true);
-    });
-
-    lazorAdapter.on('disconnect', () => {
-      setPublicKey(null);
-      setIsConnected(false);
-    });
-
-    return () => {
-      lazorAdapter.removeAllListeners();
-    };
-  }, []);
-
-  const connect = async () => {
-    if (!adapter) return;
-    try {
-      await adapter.connect();
-    } catch (error) {
-      console.error('Failed to connect:', error);
-      throw error;
-    }
+  const handleConnect = async () => {
+    await connect({ redirectUrl: 'lazorkitmobile://callback' });
   };
 
-  const disconnect = async () => {
-    if (!adapter) return;
-    try {
-      await adapter.disconnect();
-    } catch (error) {
-      console.error('Failed to disconnect:', error);
-      throw error;
-    }
+  const handleSignMessage = async (message: string): Promise<string> => {
+    const result = await signMessage(message, {
+      redirectUrl: 'lazorkitmobile://callback',
+    });
+    return result.signature;
+  };
+
+  const handleTransaction = async (instructions: any[]): Promise<string> => {
+    return await signAndSendTransaction(
+      {
+        instructions,
+        transactionOptions: { clusterSimulation: 'devnet' },
+      },
+      { redirectUrl: 'lazorkitmobile://callback' }
+    );
   };
 
   return (
-    <LazorkitContext.Provider value={{ adapter, publicKey, isConnected, connect, disconnect }}>
+    <LazorkitContext.Provider
+      value={{
+        publicKey: smartWalletPubkey?.toBase58() || null,
+        isConnected,
+        isLoading,
+        connect: handleConnect,
+        disconnect,
+        signMessage: handleSignMessage,
+        signAndSendTransaction: handleTransaction,
+      }}
+    >
       {children}
     </LazorkitContext.Provider>
+  );
+};
+
+export const LazorkitProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  return (
+    <LazorKitProviderSDK
+      rpcUrl="https://api.devnet.solana.com"
+      portalUrl="https://portal.lazor.sh"
+      configPaymaster={{
+        paymasterUrl: 'https://lazorkit-paymaster.onrender.com',
+      }}
+    >
+      <WalletContextProvider>{children}</WalletContextProvider>
+    </LazorKitProviderSDK>
   );
 };
 
