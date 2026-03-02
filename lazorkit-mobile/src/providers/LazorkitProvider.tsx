@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Connection, clusterApiUrl } from '@solana/web3.js';
-
-// Note: Import actual Lazorkit adapter when available
-// import { LazorKitMobileAdapter } from '@lazorkit/wallet-mobile-adapter';
+import React, { createContext, useContext, ReactNode } from 'react';
+import {
+  LazorKitProvider as LazorKitProviderSDK,
+  useWallet as useLazorWallet,
+} from '@lazorkit/wallet-mobile-adapter';
 
 interface LazorkitContextType {
   publicKey: string | null;
@@ -10,7 +10,8 @@ interface LazorkitContextType {
   isLoading: boolean;
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
-  sendGaslessTransaction: (recipient: string, amount: number) => Promise<string>;
+  signMessage: (message: string) => Promise<string>;
+  signAndSendTransaction: (instructions: any[]) => Promise<string>;
 }
 
 const LazorkitContext = createContext<LazorkitContextType>({} as LazorkitContextType);
@@ -19,107 +20,93 @@ interface LazorkitProviderProps {
   children: ReactNode;
 }
 
-export const LazorkitProvider: React.FC<LazorkitProviderProps> = ({ children }) => {
-  const [publicKey, setPublicKey] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+// Inner component that uses the SDK hook
+const WalletContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const {
+    connect,
+    disconnect,
+    signMessage,
+    signAndSendTransaction,
+    isConnected,
+    isLoading,
+    smartWalletPubkey,
+  } = useLazorWallet();
 
-  useEffect(() => {
-    // Initialize Lazorkit adapter
-    const initAdapter = async () => {
-      try {
-        const connection = new Connection(clusterApiUrl('devnet'));
-        
-        // Initialize adapter (uncomment when using real SDK)
-        // const lazorAdapter = new LazorKitMobileAdapter({
-        //   connection,
-        //   rpId: 'your-rp-id',
-        // });
-        // setAdapter(lazorAdapter);
-        
-        console.log('Lazorkit adapter initialized');
-      } catch (error) {
-        console.error('Failed to initialize Lazorkit:', error);
-      }
-    };
-
-    initAdapter();
-  }, []);
-
-  const connect = async () => {
-    setIsLoading(true);
+  const handleConnect = async () => {
     try {
-      // Simulate connection for demo
-      // In production: await adapter.connect();
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockPublicKey = 'DYw8jCTfwHNRJhhmFcbXvVDTqWMEVFBX6ZKUmG5CNSKK';
-      setPublicKey(mockPublicKey);
-      setIsConnected(true);
-      
-      console.log('Connected with Passkey');
+      await connect({ redirectUrl: 'lazorkitmobile://callback' });
     } catch (error) {
       console.error('Failed to connect:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const disconnect = async () => {
+  const handleDisconnect = async () => {
     try {
-      // In production: await adapter.disconnect();
-      
-      setPublicKey(null);
-      setIsConnected(false);
-      
-      console.log('Disconnected');
+      await disconnect();
     } catch (error) {
       console.error('Failed to disconnect:', error);
       throw error;
     }
   };
 
-  const sendGaslessTransaction = async (recipient: string, amount: number): Promise<string> => {
-    if (!isConnected) {
-      throw new Error('Wallet not connected');
-    }
-
-    setIsLoading(true);
+  const handleSignMessage = async (message: string): Promise<string> => {
     try {
-      // In production:
-      // const signature = await adapter.sendTransaction(...);
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockSignature = `sig_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      console.log(`Gasless transfer: ${amount} SOL to ${recipient}`);
-      console.log(`Signature: ${mockSignature}`);
-      
-      return mockSignature;
+      const result = await signMessage(message, {
+        redirectUrl: 'lazorkitmobile://callback',
+      });
+      return result.signature;
+    } catch (error) {
+      console.error('Failed to sign message:', error);
+      throw error;
+    }
+  };
+
+  const handleTransaction = async (instructions: any[]): Promise<string> => {
+    try {
+      return await signAndSendTransaction(
+        {
+          instructions,
+          transactionOptions: {
+            clusterSimulation: 'devnet',
+          },
+        },
+        { redirectUrl: 'lazorkitmobile://callback' }
+      );
     } catch (error) {
       console.error('Failed to send transaction:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
     <LazorkitContext.Provider
       value={{
-        publicKey,
+        publicKey: smartWalletPubkey?.toBase58() || null,
         isConnected,
         isLoading,
-        connect,
-        disconnect,
-        sendGaslessTransaction,
+        connect: handleConnect,
+        disconnect: handleDisconnect,
+        signMessage: handleSignMessage,
+        signAndSendTransaction: handleTransaction,
       }}
     >
       {children}
     </LazorkitContext.Provider>
+  );
+};
+
+export const LazorkitProvider: React.FC<LazorkitProviderProps> = ({ children }) => {
+  return (
+    <LazorKitProviderSDK
+      rpcUrl="https://api.devnet.solana.com"
+      portalUrl="https://portal.lazor.sh"
+      configPaymaster={{
+        paymasterUrl: 'https://lazorkit-paymaster.onrender.com',
+      }}
+    >
+      <WalletContextProvider>{children}</WalletContextProvider>
+    </LazorKitProviderSDK>
   );
 };
 

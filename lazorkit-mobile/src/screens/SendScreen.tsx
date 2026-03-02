@@ -8,12 +8,15 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
+import { PublicKey, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useLazorkit } from '../providers/LazorkitProvider';
+import { NATIVE_MINT } from '@solana/spl-token';
 
 export const SendScreen: React.FC = () => {
-  const { publicKey, isConnected, isLoading, sendGaslessTransaction } = useLazorkit();
+  const { publicKey, isConnected, signAndSendTransaction } = useLazorkit();
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleTransfer = async () => {
     if (!recipient || !amount) {
@@ -21,14 +24,30 @@ export const SendScreen: React.FC = () => {
       return;
     }
 
+    setLoading(true);
     try {
-      const signature = await sendGaslessTransaction(recipient, parseFloat(amount));
+      // Create SOL transfer instruction
+      const recipientPubkey = new PublicKey(recipient);
+      const senderPubkey = new PublicKey(publicKey!);
+      const lamports = Math.floor(parseFloat(amount) * LAMPORTS_PER_SOL);
+
+      const transferInstruction = SystemProgram.transfer({
+        fromPubkey: senderPubkey,
+        toPubkey: recipientPubkey,
+        lamports,
+      });
+
+      // Send gasless transaction via Lazorkit
+      const signature = await signAndSendTransaction([transferInstruction]);
+
       Alert.alert('Success', `Transfer complete!\nSignature: ${signature.slice(0, 20)}...`);
       setRecipient('');
       setAmount('');
     } catch (error) {
+      console.error('Transfer failed:', error);
       Alert.alert('Error', 'Transfer failed. Please try again.');
-      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -44,18 +63,18 @@ export const SendScreen: React.FC = () => {
     <ScrollView style={styles.scrollView}>
       <View style={styles.container}>
         <Text style={styles.title}>Send SOL</Text>
-        
+
         <Text style={styles.subtitle}>
           No gas fees required! Powered by Lazorkit.
         </Text>
-        
+
         <View style={styles.infoBox}>
           <Text style={styles.label}>Your Wallet:</Text>
           <Text style={styles.address}>
             {publicKey?.slice(0, 12)}...{publicKey?.slice(-12)}
           </Text>
         </View>
-        
+
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Recipient Address</Text>
           <TextInput
@@ -67,7 +86,7 @@ export const SendScreen: React.FC = () => {
             autoCorrect={false}
           />
         </View>
-        
+
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Amount (SOL)</Text>
           <TextInput
@@ -78,12 +97,12 @@ export const SendScreen: React.FC = () => {
             keyboardType="decimal-pad"
           />
         </View>
-        
+
         <View style={styles.buttonContainer}>
           <Button
-            title={isLoading ? 'Sending...' : 'Send (Gasless)'}
+            title={loading ? 'Sending...' : 'Send (Gasless)'}
             onPress={handleTransfer}
-            disabled={isLoading || !recipient || !amount}
+            disabled={loading || !recipient || !amount}
           />
         </View>
       </View>

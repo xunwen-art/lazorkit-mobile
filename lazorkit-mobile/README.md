@@ -24,32 +24,26 @@
 - Node.js 18+
 - Expo CLI: `npm install -g expo-cli`
 - iOS Simulator (Mac) or Android Emulator
+- **For real devices**: iOS requires Apple Developer account for biometrics
 
 ### Installation
 
 ```bash
-git clone https://github.com/yourusername/lazorkit-mobile
+git clone https://github.com/xunwen-art/lazorkit-mobile
 cd lazorkit-mobile
 npm install
-```
-
-### Environment Setup
-
-Create `.env` file:
-
-```env
-SOLANA_RPC_URL=https://api.devnet.solana.com
-LAZORKIT_API_KEY=your_api_key_here
 ```
 
 ### Run the App
 
 ```bash
-# iOS
+# iOS Simulator
 npm run ios
 
-# Android
+# Android Emulator
 npm run android
+
+# Note: Biometric auth requires real device
 ```
 
 ---

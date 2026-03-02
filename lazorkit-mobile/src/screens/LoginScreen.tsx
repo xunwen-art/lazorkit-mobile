@@ -4,7 +4,7 @@ import { useLazorkit } from '../providers/LazorkitProvider';
 import { BiometricButton } from '../components/BiometricButton';
 
 export const LoginScreen: React.FC = () => {
-  const { connect, disconnect, publicKey, isConnected, isLoading } = useLazorkit();
+  const { connect, disconnect, publicKey, isConnected } = useLazorkit();
   const [loading, setLoading] = useState(false);
 
   const handlePasskeyLogin = async () => {
@@ -13,8 +13,8 @@ export const LoginScreen: React.FC = () => {
       await connect();
       Alert.alert('Success', 'Logged in with Passkey!');
     } catch (error) {
-      Alert.alert('Error', 'Failed to login');
       console.error(error);
+      Alert.alert('Error', 'Failed to login');
     } finally {
       setLoading(false);
     }
@@ -26,8 +26,8 @@ export const LoginScreen: React.FC = () => {
       await connect();
       Alert.alert('Success', 'Welcome back!');
     } catch (error) {
-      Alert.alert('Error', 'Failed to login');
       console.error(error);
+      Alert.alert('Error', 'Failed to login');
     } finally {
       setLoading(false);
     }
@@ -47,14 +47,14 @@ export const LoginScreen: React.FC = () => {
       <View style={styles.container}>
         <Text style={styles.emoji}>🎉</Text>
         <Text style={styles.title}>Welcome!</Text>
-        
+
         <View style={styles.infoBox}>
           <Text style={styles.label}>Your Wallet:</Text>
           <Text style={styles.address}>
             {publicKey?.slice(0, 12)}...{publicKey?.slice(-12)}
           </Text>
         </View>
-        
+
         <View style={styles.buttonContainer}>
           <Button
             title="Logout"
@@ -73,24 +73,24 @@ export const LoginScreen: React.FC = () => {
       <Text style={styles.subtitle}>
         Passkey-based wallet for Solana
       </Text>
-      
+
       <View style={styles.buttonContainer}>
         {/* Biometric Login (if available) */}
-        <BiometricButton 
+        <BiometricButton
           onAuthenticate={handleBiometricLogin}
           label="Quick Login"
         />
-        
+
         {/* Passkey Login */}
         <View style={{ marginTop: 10 }}>
           <Button
-            title={loading || isLoading ? 'Connecting...' : 'Login with Passkey'}
+            title={loading ? 'Connecting...' : 'Login with Passkey'}
             onPress={handlePasskeyLogin}
-            disabled={loading || isLoading}
+            disabled={loading}
           />
         </View>
       </View>
-      
+
       <Text style={styles.footer}>
         No password required • Gasless transactions
       </Text>
