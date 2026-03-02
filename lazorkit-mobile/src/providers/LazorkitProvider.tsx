@@ -23,7 +23,6 @@ export const LazorkitProvider: React.FC<LazorkitProviderProps> = ({ children }) 
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  // const [adapter, setAdapter] = useState<LazorKitMobileAdapter | null>(null);
 
   useEffect(() => {
     // Initialize Lazorkit adapter

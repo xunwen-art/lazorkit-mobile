@@ -1,6 +1,6 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { LazorkitProvider } from './src/providers/LazorkitProvider';
@@ -21,14 +21,14 @@ function MainApp() {
         name="Home" 
         component={LoginScreen}
         options={{
-          tabBarIcon: ({ color }) => <Text style={{ color }}>🏠</Text>,
+          tabBarIcon: () => <Text>🏠</Text>,
         }}
       />
       <Tab.Screen 
         name="Send" 
         component={SendScreen}
         options={{
-          tabBarIcon: ({ color }) => <Text style={{ color }}>💸</Text>,
+          tabBarIcon: () => <Text>💸</Text>,
         }}
       />
     </Tab.Navigator>

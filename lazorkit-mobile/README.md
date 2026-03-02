@@ -60,22 +60,20 @@ npm run android
 lazorkit-mobile/
 ├── src/
 │   ├── screens/
-│   │   ├── LoginScreen.tsx       # Passkey login
-│   │   ├── HomeScreen.tsx        # Dashboard
+│   │   ├── LoginScreen.tsx       # Passkey + Biometric login
 │   │   └── SendScreen.tsx        # Gasless transfers
 │   ├── components/
-│   │   ├── PasskeyButton.tsx     # Reusable passkey button
-│   │   └── GaslessTransfer.tsx   # Transfer component
+│   │   └── BiometricButton.tsx   # FaceID/TouchID button
 │   ├── hooks/
-│   │   ├── useLazorkit.ts        # Lazorkit SDK hook
 │   │   └── useBiometric.ts       # Biometric auth hook
-│   └── utils/
-│       └── solana.ts             # Solana utilities
+│   └── providers/
+│       └── LazorkitProvider.tsx  # Lazorkit SDK context
 ├── docs/
+│   ├── README-zh.md              # Chinese documentation
 │   ├── tutorial-1-passkey.md     # Passkey tutorial
 │   ├── tutorial-2-gasless.md     # Gasless tutorial
 │   └── tutorial-3-biometric.md   # Biometric tutorial
-└── App.tsx                       # Main app
+└── App.tsx                       # Main app with navigation
 ```
 
 ---
